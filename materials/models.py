@@ -33,7 +33,12 @@ class Lesson(models.Model):
         help_text="Укажите название урока",
     )
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
+        Course,
+        on_delete=models.CASCADE,
+        related_name="lessons",
+        verbose_name="Курс",
+        blank=True,
+        null=True,
     )
     description = models.TextField(
         verbose_name="Описание урока", help_text="Введите описание урока"
@@ -42,9 +47,14 @@ class Lesson(models.Model):
         upload_to="materials/previews",
         verbose_name="Превью урока",
         help_text="Загрузите превью урока",
+        blank=True,
+        null=True,
     )
     video_url = models.URLField(
-        verbose_name="Ссылка на видео", help_text="Укажите ссылку на видео"
+        verbose_name="Ссылка на видео",
+        help_text="Укажите ссылку на видео",
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
