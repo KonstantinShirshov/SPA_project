@@ -6,7 +6,7 @@ from payments.views import PaymentViewSet
 app_name = PaymentsConfig.name
 
 router = SimpleRouter()
-router.register(r"payments", PaymentViewSet, basename="payment")
+router.register("", PaymentViewSet, basename="payment")
 
 urlpatterns = []
 
