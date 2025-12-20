@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import (CreateAPIView, DestroyAPIView,
                                      ListAPIView, RetrieveAPIView,
@@ -25,11 +26,11 @@ class CourseViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            self.permission_classes = (~IsModer,)
+            self.permission_classes = [~IsModer]
         elif self.action in ["update", "retrieve"]:
-            self.permission_classes = (IsModer | IsOwner,)
+            self.permission_classes = [IsModer | IsOwner]
         elif self.action == "destroy":
-            self.permission_classes = (~IsModer, IsOwner)
+            self.permission_classes = [IsOwner]
         return super().get_permissions()
 
 
@@ -79,7 +80,8 @@ class SubscriptionAPIView(APIView):
         if sub_item.exists():
             sub_item.delete()
             message = 'подписка удалена'
+            return Response({'message': message}, status=status.HTTP_200_OK)
         else:
             Subscription.objects.create(user=user, course=course_item)
             message = 'подписка добавлена'
-        return Response({'message': message})
+            return Response({'message': message}, status=status.HTTP_201_CREATED)
