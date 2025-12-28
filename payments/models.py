@@ -26,8 +26,22 @@ class Payment(models.Model):
         blank=True,
         related_name="payments",
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    pay_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
+    amount = models.PositiveIntegerField(verbose_name="Сумма", null=True, blank=True)
+    pay_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, blank=True, null=True)
+    session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Id сессии",
+        help_text="Укажите Id сессии",
+    )
+    link = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="Ссылка на оплату",
+        help_text="Укажите ссылку на оплату",
+    )
 
     def __str__(self):
         studying_product = self.course or self.lesson
