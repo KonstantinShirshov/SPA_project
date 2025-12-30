@@ -4,7 +4,11 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import generics, viewsets
 from payments.models import Payment
 from payments.serializers import PaymentSerializer
-from payments.services import create_stripe_product, create_stripe_price, create_stripe_session
+from payments.services import (
+    create_stripe_product,
+    create_stripe_price,
+    create_stripe_session,
+)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -27,7 +31,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             else:
                 product = create_stripe_product(payment.lesson)
         price = create_stripe_price(stripe_product=product, amount=payment.amount)
-        session_id, session_url =create_stripe_session(price)
+        session_id, session_url = create_stripe_session(price)
         payment.session_id = session_id
         payment.link = session_url
         payment.save()
