@@ -27,7 +27,9 @@ class Payment(models.Model):
         related_name="payments",
     )
     amount = models.PositiveIntegerField(verbose_name="Сумма", null=True, blank=True)
-    pay_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, blank=True, null=True)
+    pay_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHODS, blank=True, null=True
+    )
     session_id = models.CharField(
         max_length=255,
         blank=True,
