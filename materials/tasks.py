@@ -11,6 +11,7 @@ from django.utils import timezone
 
 @shared_task
 def info_email(course_id):
+    """ Функция для отправки письма об обновлении курса, подписанным на курс пользователям.  """
     course = Course.objects.get(pk=course_id)
     now = timezone.now()
     if now - course.updated_at < timedelta(minutes=1):
