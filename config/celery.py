@@ -1,5 +1,5 @@
 import os
-from  celery.schedules import crontab
+
 
 from celery import Celery
 
@@ -10,7 +10,3 @@ app = Celery("config")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
 app.autodiscover_tasks()
-
-app.conf.beat_schedule = {
-    "disactive_users": {"task": "users.tasks.disactive_users", "schedule": crontab()}
-}
