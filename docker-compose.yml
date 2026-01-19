@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:17.6
+    container_name: my_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: backend
+    command: >
+      bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+      - static_volume:/code/static
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env\
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    env_file:
+      - ./.env
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery:
+      build:
+        context: .
+      command: celery -A config worker -l INFO --uid=4
+      volumes:
+        - .:/app
+      depends_on:
+        - db
+        - redis
+
+  celery_beat:
+    build:
+      context: .
+    command: celery -A config beat -l INFO -S django
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+      - celery
+
+volumes:
+  postgres_data:
+  static_volume:
+  redis_data:
