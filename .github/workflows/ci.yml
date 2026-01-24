@@ -117,7 +117,7 @@ jobs:
             echo "=== COPYING FILES WITH RSYNC ==="
             
             # Вариант A: Копируем все файлы и папки
-            rsync -avz \
+            rsync --vv -avz \
               --progress \
               --recursive \
               --exclude '.git' \
