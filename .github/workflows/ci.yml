@@ -29,9 +29,7 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: |
-          poetry install --no-root
-          poetry shell  
+        run: poetry install --no-root
 
       - name: Set up environment variables
         run: |
