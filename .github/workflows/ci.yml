@@ -41,10 +41,10 @@ jobs:
           echo "DATABASE_URL=sqlite:///db.sqlite3" >> $GITHUB_ENV
 
       - name: Run migrate
-        run: poetry run manage.py migrate
+        run: poetry run python manage.py migrate
 
       - name: Run tests
-        run: poetry run manage.py test
+        run: poetry run python manage.py test
 
 #  deploy:
 #    runs-on: ubuntu-latest
