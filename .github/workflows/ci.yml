@@ -112,24 +112,35 @@ jobs:
             echo "Total files to copy:"
             find . -type f | wc -l
 
-        - name: Copy project files to server
+        - name: Copy files with rsync (FIXED)
           run: |
+            echo "=== RSYNC DEBUG ==="
+            echo "Local directory: $(pwd)"
+            echo "Remote path: ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
+            echo ""
+
+            # Проверим соединение
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'SSH connection test OK'"
+
+            # Копируем с подробным выводом
             rsync -avz \
-              --exclude '.git/' \
-              --exclude '.github/' \
-              --exclude '__pycache__/' \
+              --progress \
+              --stats \
+              --no-inc-recursive \
+              --exclude '.git' \
+              --exclude '.github' \
+              --exclude '__pycache__' \
               --exclude '*.pyc' \
               --exclude '.env*' \
-              --exclude 'venv/' \
-              --exclude '.venv/' \
+              --exclude 'venv' \
+              --exclude '.venv' \
               --exclude '*.log' \
-              --exclude 'db.sqlite3' \
-              --exclude 'test_db.sqlite3' \
-              --exclude 'local_settings.py' \
-              --exclude 'instance/' \
-              --delete \
+              --exclude '*.sqlite3' \
               ./ \
-              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}
+              "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
+
+            echo ""
+            echo "Rsync completed"
 
         - name: Install Poetry and dependencies on server
           run: |
