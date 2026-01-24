@@ -112,6 +112,10 @@ jobs:
             echo "Total files to copy:"
             find . -type f | wc -l
 
+        - name: Check files in directory
+          run: |
+            ls -la /home/runner/work/SPA_project/SPA_project/
+
         - name: Copy files with rsync (FIXED)
           run: |
             echo "=== COPYING FILES WITH RSYNC ==="
