@@ -26,7 +26,9 @@ jobs:
       - name: Cache Poetry
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pypoetry
+          path: |
+            ~/.cache/pypoetry
+            .venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
@@ -34,14 +36,22 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root
 
+      - name: Create static directory
+        run: mkdir -p static
+
       - name: Set up environment variables
         run: |
           echo "DJANGO_SETTINGS_MODULE=config.settings" >> $GITHUB_ENV
           echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
           echo "DATABASE_URL=sqlite:///db.sqlite3" >> $GITHUB_ENV
 
-      - name: Run migrate
-        run: poetry run python manage.py migrate
+      - name: Run migrate with SQLite
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          SECRET_KEY: test-secret-key-for-ci
+          DATABASE_URL: sqlite:///db.sqlite3
+        run: |
+            poetry run python manage.py migrate --noinput
 
       - name: Run tests
         run: poetry run python manage.py test
