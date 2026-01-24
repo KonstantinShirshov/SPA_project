@@ -87,6 +87,33 @@ jobs:
             ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
             chmod 644 ~/.ssh/known_hosts
 
+        - name: Check local files
+          run: |
+            echo "=== LOCAL FILES ==="
+            pwd
+            ls -la
+            echo ""
+            echo "Looking for pyproject.toml:"
+            find . -name "pyproject.toml" -type f
+            echo ""
+            echo "Total files to copy:"
+            find . -type f | wc -l
+
+        - name: Debug - Check what GitHub Actions sees
+          run: |
+            echo "=== GITHUB ACTIONS WORKSPACE ==="
+            pwd
+            echo ""
+            echo "=== FILES IN CURRENT DIRECTORY ==="
+            ls -la
+            echo ""
+            echo "=== CHECKING FOR PROJECT FILES ==="
+            [ -f pyproject.toml ] && echo "✓ pyproject.toml FOUND" || echo "✗ pyproject.toml NOT FOUND"
+            [ -f manage.py ] && echo "✓ manage.py FOUND" || echo "✗ manage.py NOT FOUND"
+            echo ""
+            echo "=== LISTING ALL FILES ==="
+            find . -type f -name "*.py" -o -name "*.toml" -o -name "*.txt" | head -20
+
         - name: Copy project files to server
           run: |
             rsync -avz \
