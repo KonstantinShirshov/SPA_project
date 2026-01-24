@@ -80,8 +80,14 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.SSH_KEY }}
 
+        - name: Add host key
+          run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan 158.160.156.196 >> ~/.ssh/known_hosts
+
         - name: Copy project files to server
           run: |
+            ssh-keyscan -H ваш_хост.ru >> ~/.ssh/known_hosts
             rsync -avz --exclude '__pycache__' . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }} 
 
         - name: Install Poetry and dependencies on server
