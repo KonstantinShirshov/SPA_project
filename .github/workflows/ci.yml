@@ -83,12 +83,28 @@ jobs:
         - name: Add host key
           run: |
             mkdir -p ~/.ssh
-            ssh-keyscan 158.160.156.196 >> ~/.ssh/known_hosts
+            chmod 700 ~/.ssh
+            ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
 
         - name: Copy project files to server
           run: |
-            ssh-keyscan -H ваш_хост.ru >> ~/.ssh/known_hosts
-            rsync -avz --exclude '__pycache__' . ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }} 
+            rsync -avz \
+              --exclude '.git/' \
+              --exclude '.github/' \
+              --exclude '__pycache__/' \
+              --exclude '*.pyc' \
+              --exclude '.env*' \
+              --exclude 'venv/' \
+              --exclude '.venv/' \
+              --exclude '*.log' \
+              --exclude 'db.sqlite3' \
+              --exclude 'test_db.sqlite3' \
+              --exclude 'local_settings.py' \
+              --exclude 'instance/' \
+              --delete \
+              ./ \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}
 
         - name: Install Poetry and dependencies on server
           run: |
