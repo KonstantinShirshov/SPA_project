@@ -49,6 +49,7 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings
           SECRET_KEY: test-secret-key-for-ci
+          USE_SQLITE: "true"
           DATABASE_URL: sqlite:///db.sqlite3
         run: |
             poetry run python manage.py migrate --noinput
@@ -57,6 +58,7 @@ jobs:
         env:
             DJANGO_SETTINGS_MODULE: config.settings
             SECRET_KEY: test-secret-key-for-ci
+            USE_SQLITE: "true"
             DATABASE_URL: sqlite:///db.sqlite3
         run: poetry run python manage.py test
 
