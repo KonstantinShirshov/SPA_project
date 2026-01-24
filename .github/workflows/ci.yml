@@ -99,21 +99,6 @@ jobs:
             echo "Total files to copy:"
             find . -type f | wc -l
 
-        - name: Debug - Check what GitHub Actions sees
-          run: |
-            echo "=== GITHUB ACTIONS WORKSPACE ==="
-            pwd
-            echo ""
-            echo "=== FILES IN CURRENT DIRECTORY ==="
-            ls -la
-            echo ""
-            echo "=== CHECKING FOR PROJECT FILES ==="
-            [ -f pyproject.toml ] && echo "✓ pyproject.toml FOUND" || echo "✗ pyproject.toml NOT FOUND"
-            [ -f manage.py ] && echo "✓ manage.py FOUND" || echo "✗ manage.py NOT FOUND"
-            echo ""
-            echo "=== LISTING ALL FILES ==="
-            find . -type f -name "*.py" -o -name "*.toml" -o -name "*.txt" | head -20
-
         - name: Copy project files to server
           run: |
             rsync -avz \
@@ -135,35 +120,22 @@ jobs:
 
         - name: Install Poetry and dependencies on server
           run: |
-            # Простая и понятная команда
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-              set -e
-              cd '${{ secrets.DEPLOY_DIR}}'
-              echo 'Current directory: \$(pwd)'
-              echo 'Files:'
-              ls -la
-            
-              # Проверяем установку Poetry
-              if ! command -v poetry &> /dev/null; then
-                echo 'Installing Poetry...'
-                curl -sSL https://install.python-poetry.org | python3 -
-                export PATH=\"\$HOME/.local/bin:\$PATH\"
-              else
-                echo 'Poetry already installed'
-                export PATH=\"\$HOME/.local/bin:\$PATH\"
-              fi
-            
-              # Проверяем PATH и Poetry
-              echo \"PATH: \$PATH\"
-              poetry --version
-            
-              # Устанавливаем зависимости
-              echo 'Installing dependencies...'
-              poetry config virtualenvs.in-project true
-              poetry install --no-dev --no-interaction
-            
-              echo 'Poetry installation completed'
-            "
+              ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+                cd ${{ secrets.DEPLOY_DIR }}
+              
+                # Устанавливаем Poetry, если еще не установлен
+                if ! command -v poetry &> /dev/null; then
+                  curl -sSL https://install.python-poetry.org | python3 -
+                  export PATH="$HOME/.local/bin:$PATH"
+                fi
+              
+                # Обновляем PATH для текущей сессии
+                export PATH="$HOME/.local/bin:$PATH"
+              
+                # Устанавливаем зависимости
+                poetry config virtualenvs.in-project true
+                poetry install --no-dev --no-interaction --no-root
+              EOF
 
         - name: Apply migrations on server
           run: |
