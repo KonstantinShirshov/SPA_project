@@ -41,7 +41,6 @@ services:
     depends_on:
       - web
 
-
   redis:
     image: redis:7
     container_name: redis
