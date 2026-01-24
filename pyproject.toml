@@ -36,4 +36,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.packages]
-spa_project = {from = "."}
+packages = [
+    { include = "spa_project" }
+]
