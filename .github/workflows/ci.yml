@@ -39,12 +39,6 @@ jobs:
       - name: Create static directory
         run: mkdir -p static
 
-      - name: Set up environment variables
-        run: |
-          echo "DJANGO_SETTINGS_MODULE=config.settings" >> $GITHUB_ENV
-          echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
-          echo "DATABASE_URL=sqlite:///db.sqlite3" >> $GITHUB_ENV
-
       - name: Run migrate with SQLite
         env:
           DJANGO_SETTINGS_MODULE: config.settings
