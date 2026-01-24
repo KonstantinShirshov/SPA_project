@@ -108,27 +108,35 @@ jobs:
 
         - name: Install Poetry and dependencies on server
           run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} '
-              cd "$0"
-              
-              # Устанавливаем Poetry, если еще не установлен
+            # Простая и понятная команда
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+              set -e
+              cd '${{ secrets.DEPLOY_DIR}}'
+              echo 'Current directory: \$(pwd)'
+              echo 'Files:'
+              ls -la
+            
+              # Проверяем установку Poetry
               if ! command -v poetry &> /dev/null; then
+                echo 'Installing Poetry...'
                 curl -sSL https://install.python-poetry.org | python3 -
-                export PATH="$HOME/.local/bin:$PATH"
+                export PATH=\"\$HOME/.local/bin:\$PATH\"
+              else
+                echo 'Poetry already installed'
+                export PATH=\"\$HOME/.local/bin:\$PATH\"
               fi
-              
-              # Обновляем PATH для текущей сессии
-              export PATH="$HOME/.local/bin:$PATH"
-              
-              # Проверяем что Poetry доступен
+            
+              # Проверяем PATH и Poetry
+              echo \"PATH: \$PATH\"
               poetry --version
-              
-              # Настраиваем Poetry
+            
+              # Устанавливаем зависимости
+              echo 'Installing dependencies...'
               poetry config virtualenvs.in-project true
-              
-              # Устанавливаем зависимости и создаем виртуальное окружение
               poetry install --no-dev --no-interaction
-            ' "${{ secrets.DEPLOY_DIR }}"
+            
+              echo 'Poetry installation completed'
+            "
 
         - name: Apply migrations on server
           run: |
