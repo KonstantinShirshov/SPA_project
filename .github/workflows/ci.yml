@@ -54,6 +54,10 @@ jobs:
             poetry run python manage.py migrate --noinput
 
       - name: Run tests
+        env:
+            DJANGO_SETTINGS_MODULE: config.settings
+            SECRET_KEY: test-secret-key-for-ci
+            DATABASE_URL: sqlite:///db.sqlite3
         run: poetry run python manage.py test
 
 #  deploy:
