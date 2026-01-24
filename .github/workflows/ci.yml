@@ -87,6 +87,11 @@ jobs:
             ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
             chmod 644 ~/.ssh/known_hosts
 
+        - name: Create directory on server if not exists
+          run: |
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+              mkdir -p ${{ secrets.DEPLOY_DIR }}
+
         - name: Copy project files to server
           run: |
             rsync -avz \
