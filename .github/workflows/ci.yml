@@ -6,6 +6,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -52,8 +63,9 @@ jobs:
         env:
             DJANGO_SETTINGS_MODULE: config.settings
             SECRET_KEY: test-secret-key-for-ci
-            USE_SQLITE: "true"
             DATABASE_URL: sqlite:///db.sqlite3
+            CELERY_BROKER_URL: redis://localhost:6379/0
+            CELERY_RESULT_BACKEND: redis://localhost:6379/0
         run: poetry run python manage.py test
 
 #  deploy:
