@@ -93,22 +93,6 @@ jobs:
           with:
             ssh-private-key: ${{ secrets.SSH_KEY }}
 
-        - name: Go to workspace and copy
-          run: |
-            # ВСЕГДА начинаем с workspace
-            cd "$GITHUB_WORKSPACE"
-
-            echo "=== WORKSPACE CONTENTS ==="
-            pwd
-            ls -la
-
-            # Копируем
-            tar czf - . | ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-              mkdir -p '${{ secrets.DEPLOY_DIR }}'
-              cd '${{ secrets.DEPLOY_DIR }}'
-              tar xzf -
-              ls -la
-
         - name: Add host key
           run: |
             mkdir -p ~/.ssh
@@ -130,7 +114,7 @@ jobs:
 
         - name: Check files in directory
           run: |
-            ls -la /home/runner/work/SPA_project/SPA_project/
+            ls -la /home/runner/work/SPA_project/
 
         - name: Locate project files
           run: |
