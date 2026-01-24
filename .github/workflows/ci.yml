@@ -114,19 +114,12 @@ jobs:
 
         - name: Copy files with rsync (FIXED)
           run: |
-            echo "=== RSYNC DEBUG ==="
-            echo "Local directory: $(pwd)"
-            echo "Remote path: ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
-            echo ""
-
-            # Проверим соединение
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'SSH connection test OK'"
-
-            # Копируем с подробным выводом
+            echo "=== COPYING FILES WITH RSYNC ==="
+            
+            # Вариант A: Копируем все файлы и папки
             rsync -avz \
               --progress \
-              --stats \
-              --no-inc-recursive \
+              --recursive \
               --exclude '.git' \
               --exclude '.github' \
               --exclude '__pycache__' \
@@ -136,11 +129,9 @@ jobs:
               --exclude '.venv' \
               --exclude '*.log' \
               --exclude '*.sqlite3' \
-              ./ \
+              ./* \
               "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
-
-            echo ""
-            echo "Rsync completed"
+        
 
         - name: Install Poetry and dependencies on server
           run: |
