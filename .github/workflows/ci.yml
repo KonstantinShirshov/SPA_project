@@ -20,6 +20,9 @@ jobs:
           curl -sSL https://install.python-poetry.org | python -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache Poetry
         uses: actions/cache@v3
         with:
@@ -38,10 +41,10 @@ jobs:
           echo "DATABASE_URL=sqlite:///db.sqlite3" >> $GITHUB_ENV
 
       - name: Run migrate
-        run: python manage.py migrate
+        run: poetry run manage.py migrate
 
       - name: Run tests
-        run:  python manage.py test
+        run: poetry run manage.py test
 
 #  deploy:
 #    runs-on: ubuntu-latest
