@@ -108,8 +108,8 @@ jobs:
 
         - name: Install Poetry and dependencies on server
           run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              cd ${{ secrets.DEPLOY_DIR }}
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} '
+              cd "$0"
               
               # Устанавливаем Poetry, если еще не установлен
               if ! command -v poetry &> /dev/null; then
@@ -117,13 +117,18 @@ jobs:
                 export PATH="$HOME/.local/bin:$PATH"
               fi
               
-              # Устанавливаем зависимости
-              poetry config virtualenvs.in-project true  # Создаем .venv в проекте
-              poetry install --no-dev --no-interaction
+              # Обновляем PATH для текущей сессии
+              export PATH="$HOME/.local/bin:$PATH"
               
-              # Активируем виртуальное окружение
-              source .venv/bin/activate
-            EOF
+              # Проверяем что Poetry доступен
+              poetry --version
+              
+              # Настраиваем Poetry
+              poetry config virtualenvs.in-project true
+              
+              # Устанавливаем зависимости и создаем виртуальное окружение
+              poetry install --no-dev --no-interaction
+            ' "${{ secrets.DEPLOY_DIR }}"
 
         - name: Apply migrations on server
           run: |
