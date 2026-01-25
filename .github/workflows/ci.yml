@@ -147,6 +147,11 @@ jobs:
         - name: Check current directory
           run: pwd
 
+        - name: List directory structure
+          run: |
+            echo "=== DIRECTORY STRUCTURE ==="
+            ls -R
+
         - name: Copy files with rsync (FIXED)
           run: |
             echo "=== COPYING FILES WITH RSYNC ==="
