@@ -134,18 +134,50 @@ jobs:
         - name: Setup and start PostgreSQL
           run: |
             ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              # Запускаем PostgreSQL
+              echo "=== Checking PostgreSQL status ==="
+
+              # Проверяем, установлен ли PostgreSQL
+              if ! command -v psql &> /dev/null; then
+                echo "PostgreSQL not found, installing..."
+                sudo apt-get update
+                sudo apt-get install -y postgresql postgresql-contrib
+              fi
+
+              # Останавливаем и перезапускаем для надежности
+              echo "=== Restarting PostgreSQL ==="
+              sudo systemctl stop postgresql 2>/dev/null || true
               sudo systemctl start postgresql
               sudo systemctl enable postgresql
-              
+
               # Даем время на запуск
-              sleep 5
-              
-              # Проверяем, что PostgreSQL запущен
-              sudo systemctl status postgresql --no-pager | head -20
-              
-              # Проверяем подключение
-              sudo -u postgres psql -c "SELECT version();" || echo "PostgreSQL check failed"
+              sleep 10
+
+              # Проверяем статус
+              echo "=== PostgreSQL Status ==="
+              sudo systemctl status postgresql --no-pager
+
+              # Проверяем, слушает ли порт
+              echo "=== Checking if PostgreSQL is listening ==="
+              sudo netstat -tlnp | grep 5432 || echo "Port 5432 not found"
+
+              # Проверяем подключение от пользователя postgres
+              echo "=== Testing connection as postgres user ==="
+              sudo -u postgres psql -c "SELECT version();" || echo "Direct connection failed"
+
+              # Проверяем сокет
+              echo "=== Checking PostgreSQL socket ==="
+              ls -la /var/run/postgresql/ || echo "Socket directory not found"
+
+              # Создаем пользователя и базу данных если их нет
+              echo "=== Creating database and user if not exist ==="
+              sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';" 2>/dev/null || echo "User already exists or error"
+              sudo -u postgres psql -c "ALTER USER ${{ secrets.DB_USER }} CREATEDB;" 2>/dev/null || echo "Could not alter user"
+              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }} OWNER ${{ secrets.DB_USER }};" 2>/dev/null || echo "Database already exists or error"
+              sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};" 2>/dev/null || echo "Could not grant privileges"
+
+              # Проверяем список баз данных
+              echo "=== Listing databases ==="
+              sudo -u postgres psql -c "\l"
             EOF
 
         - name: Apply migrations on server
