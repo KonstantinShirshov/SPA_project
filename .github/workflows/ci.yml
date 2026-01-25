@@ -139,67 +139,10 @@ jobs:
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"  # Пароль: spa_password
             export POSTGRES_HOST="localhost"
             export POSTGRES_PORT="5432"
-      
-            # Исправляем импорт если нужно
-            if [ -f "materials/tasks.py" ] && grep -q "from black import timezone" materials/tasks.py; then
-              echo "Fixing import in materials/tasks.py..."
-              sed -i "s/from black import timezone/from django.utils import timezone/g" materials/tasks.py
-            fi
-      
+                        
             # Создаем директорию для статики
             mkdir -p static
-      
-            # Проверяем настройки
-            echo "=== Checking environment variables ==="
-            echo "USE_SQLITE: $USE_SQLITE"
-            echo "POSTGRES_DB: $POSTGRES_DB"
-            echo "POSTGRES_USER: $POSTGRES_USER"
-            echo "POSTGRES_HOST: $POSTGRES_HOST"
-            echo "POSTGRES_PORT: $POSTGRES_PORT"
-      
-            # Проверяем подключение к PostgreSQL
-            echo "=== Testing PostgreSQL connection ==="
-            PGPASSWORD='${{ secrets.POSTGRES_PASSWORD }}' psql -h localhost -U "${{ secrets.POSTGRES_USER }}" -d "${{ secrets.POSTGRES_DB }}" -c "SELECT 'PostgreSQL connection successful' as status;" || {
-              echo "PostgreSQL connection failed"
-              echo "Trying to create database if not exists..."
-              sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';" 2>/dev/null || true
-              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.POSTGRES_DB }} OWNER ${{ secrets.POSTGRES_USER }};" 2>/dev/null || true
-            }
-      
-            # Проверяем Django настройки
-            echo "=== Testing Django database connection ==="
-            python -c "
-            import os
-            print('Current working directory:', os.getcwd())
-            print('Environment variables:')
-            print('  USE_SQLITE:', os.getenv('USE_SQLITE'))
-            print('  POSTGRES_DB:', os.getenv('POSTGRES_DB'))
-            print('  POSTGRES_USER:', os.getenv('POSTGRES_USER'))
-            print('  POSTGRES_HOST:', os.getenv('POSTGRES_HOST'))
-      
-            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-            import django
-            django.setup()
-      
-            from django.db import connection
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute('SELECT version()')
-                    version = cursor.fetchone()
-                    print(f'✅ PostgreSQL version: {version[0]}')
-            except Exception as e:
-                print(f'❌ Database connection error: {e}')
-      
-                # Выводим дополнительные детали
-                from django.conf import settings
-                print('Database config:')
-                print('  ENGINE:', settings.DATABASES['default']['ENGINE'])
-                print('  NAME:', settings.DATABASES['default']['NAME'])
-                print('  USER:', settings.DATABASES['default']['USER'])
-                print('  HOST:', settings.DATABASES['default']['HOST'])
-                exit(1)
-            "
-      
+                            
             # Выполняем миграции
             echo "=== Applying migrations ==="
             python manage.py migrate --noinput
