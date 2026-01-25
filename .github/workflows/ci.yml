@@ -161,7 +161,7 @@ jobs:
               # Устанавливаем зависимости с указанием Python 3.13
               poetry env use python3.13
               poetry config virtualenvs.in-project true
-              poetry install --no-dev --no-interaction --no-root
+              poetry install --no-interaction --no-root
             EOF
 
         - name: Apply migrations on server
