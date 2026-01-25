@@ -1,7 +1,5 @@
 from datetime import timedelta
 
-from black import timezone
-
 from materials.models import Course, Subscription
 from celery import shared_task
 from django.core.mail import send_mail
