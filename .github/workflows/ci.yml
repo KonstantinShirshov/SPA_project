@@ -131,6 +131,23 @@ jobs:
             ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
             ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
 
+        - name: Setup and start PostgreSQL
+          run: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+              # Запускаем PostgreSQL
+              sudo systemctl start postgresql
+              sudo systemctl enable postgresql
+              
+              # Даем время на запуск
+              sleep 5
+              
+              # Проверяем, что PostgreSQL запущен
+              sudo systemctl status postgresql --no-pager | head -20
+              
+              # Проверяем подключение
+              sudo -u postgres psql -c "SELECT version();" || echo "PostgreSQL check failed"
+            EOF
+
         - name: Apply migrations on server
           run: |
             ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
