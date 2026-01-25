@@ -164,8 +164,7 @@ jobs:
               --exclude '.venv' \
               --exclude '*.log' \
               --exclude '*.sqlite3' \
-              ./* \
-              "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
+              ./* "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
         
 
         - name: Install Poetry and dependencies on server
