@@ -1,6 +1,6 @@
 name: Django CI
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   test:
@@ -57,99 +57,174 @@ jobs:
           USE_SQLITE: "true"
           DATABASE_URL: sqlite:///test_db.sqlite3
         run: |
-            poetry run python manage.py migrate --noinput
+          poetry run python manage.py migrate --noinput
 
       - name: Run tests
         env:
-            DJANGO_SETTINGS_MODULE: config.settings
-            SECRET_KEY: test-secret-key-for-ci
-            USE_SQLITE: "true"
-            DATABASE_URL: sqlite:///test_db.sqlite3
-            CELERY_BROKER_URL: redis://localhost:6379/0
-            CELERY_RESULT_BACKEND: redis://localhost:6379/0
-            CELERY_TASK_ALWAYS_EAGER: "true"
+          DJANGO_SETTINGS_MODULE: config.settings
+          SECRET_KEY: test-secret-key-for-ci
+          USE_SQLITE: "true"
+          DATABASE_URL: sqlite:///test_db.sqlite3
+          CELERY_BROKER_URL: redis://localhost:6379/0
+          CELERY_RESULT_BACKEND: redis://localhost:6379/0
+          CELERY_TASK_ALWAYS_EAGER: "true"
         run: poetry run python manage.py test
 
   deploy:
-      runs-on: ubuntu-latest
-      needs: test
+    runs-on: ubuntu-latest
+    needs: test
 
-      steps:
-        - name: Check out code
-          uses: actions/checkout@v4
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-        - name: Setup Python and Poetry
-          uses: actions/setup-python@v5
-          with:
-            python-version: '3.13'
-        - run: pip install poetry
+      - name: Setup Python and Poetry
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install poetry
 
-        - name: Generate requirements.txt
-          run: |
-            poetry self add poetry-plugin-export
-            poetry export --without-hashes --format=requirements.txt --output requirements.txt
+      - name: Generate requirements.txt
+        run: |
+          poetry self add poetry-plugin-export
+          poetry export --without-hashes --format=requirements.txt --output requirements.txt
 
-        - name: Set up SSH
-          uses: webfactory/ssh-agent@v0.9.1
-          with:
-            ssh-private-key: ${{ secrets.SSH_KEY }}
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-        - name: Add host key
-          run: |
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-            ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-        - name: Copy files with rsync (FIXED)
-          run: |
-            echo "=== COPYING FILES WITH RSYNC ==="
-            
-              rsync -vv -avz \
-              --progress \
-              --recursive \
-              --exclude '.git' \
-              --exclude '.github' \
-              --exclude '__pycache__' \
-              --exclude '*.pyc' \
-              --exclude '.env*' \
-              --exclude 'venv' \
-              --exclude '.venv' \
-              --exclude '*.log' \
-              --exclude '*.sqlite3' \
-              ./* "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
-        
-        - name: Install Python and system dependencies on server
-          run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && sudo apt-get update -q"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q python3.13 python3.13-venv python3.13-dev libpq-dev postgresql-client build-essential"
+      - name: Copy files with rsync (FIXED)
+        run: |
+          echo "=== COPYING FILES WITH RSYNC ==="
+          
+            rsync -vv -avz \
+            --progress \
+            --recursive \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.env*' \
+            --exclude 'venv' \
+            --exclude '.venv' \
+            --exclude '*.log' \
+            --exclude '*.sqlite3' \
+            ./* "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
 
-        - name: Install Python dependencies on server
-          run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && python3.13 -m venv venv"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
+      - name: Install Python dependencies on server
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && python3.13 -m venv venv"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
 
-        - name: Apply migrations on server
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              cd ${{ secrets.DEPLOY_DIR }}
-              source venv/bin/activate
-              export SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
-              python manage.py migrate --noinput
-            EOF
+      - name: Apply migrations on server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd ${{ secrets.DEPLOY_DIR }}
+            source venv/bin/activate
+      
+            # Установите переменные окружения согласно settings.py
+            export SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
+            export USE_SQLITE="False"  # Явно указываем использовать PostgreSQL
+            export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"  # Имя базы: spa_project
+            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"  # Пользователь: spa_user
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"  # Пароль: spa_password
+            export POSTGRES_HOST="localhost"
+            export POSTGRES_PORT="5432"
+      
+            # Исправляем импорт если нужно
+            if [ -f "materials/tasks.py" ] && grep -q "from black import timezone" materials/tasks.py; then
+              echo "Fixing import in materials/tasks.py..."
+              sed -i "s/from black import timezone/from django.utils import timezone/g" materials/tasks.py
+            fi
+      
+            # Создаем директорию для статики
+            mkdir -p static
+      
+            # Проверяем настройки
+            echo "=== Checking environment variables ==="
+            echo "USE_SQLITE: $USE_SQLITE"
+            echo "POSTGRES_DB: $POSTGRES_DB"
+            echo "POSTGRES_USER: $POSTGRES_USER"
+            echo "POSTGRES_HOST: $POSTGRES_HOST"
+            echo "POSTGRES_PORT: $POSTGRES_PORT"
+      
+            # Проверяем подключение к PostgreSQL
+            echo "=== Testing PostgreSQL connection ==="
+            PGPASSWORD='${{ secrets.POSTGRES_PASSWORD }}' psql -h localhost -U "${{ secrets.POSTGRES_USER }}" -d "${{ secrets.POSTGRES_DB }}" -c "SELECT 'PostgreSQL connection successful' as status;" || {
+              echo "PostgreSQL connection failed"
+              echo "Trying to create database if not exists..."
+              sudo -u postgres psql -c "CREATE USER ${{ secrets.POSTGRES_USER }} WITH PASSWORD '${{ secrets.POSTGRES_PASSWORD }}';" 2>/dev/null || true
+              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.POSTGRES_DB }} OWNER ${{ secrets.POSTGRES_USER }};" 2>/dev/null || true
+            }
+      
+            # Проверяем Django настройки
+            echo "=== Testing Django database connection ==="
+            python -c "
+            import os
+            print('Current working directory:', os.getcwd())
+            print('Environment variables:')
+            print('  USE_SQLITE:', os.getenv('USE_SQLITE'))
+            print('  POSTGRES_DB:', os.getenv('POSTGRES_DB'))
+            print('  POSTGRES_USER:', os.getenv('POSTGRES_USER'))
+            print('  POSTGRES_HOST:', os.getenv('POSTGRES_HOST'))
+      
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+            import django
+            django.setup()
+      
+            from django.db import connection
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT version()')
+                    version = cursor.fetchone()
+                    print(f'✅ PostgreSQL version: {version[0]}')
+            except Exception as e:
+                print(f'❌ Database connection error: {e}')
+      
+                # Выводим дополнительные детали
+                from django.conf import settings
+                print('Database config:')
+                print('  ENGINE:', settings.DATABASES['default']['ENGINE'])
+                print('  NAME:', settings.DATABASES['default']['NAME'])
+                print('  USER:', settings.DATABASES['default']['USER'])
+                print('  HOST:', settings.DATABASES['default']['HOST'])
+                exit(1)
+            "
+      
+            # Выполняем миграции
+            echo "=== Applying migrations ==="
+            python manage.py migrate --noinput
+          EOF
 
-        - name: Collect static files on server
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              cd ${{ secrets.DEPLOY_DIR }}
-              source venv/bin/activate
-              export SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
-              python manage.py collectstatic --noinput
-            EOF
+      - name: Collect static files on server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd ${{ secrets.DEPLOY_DIR }}
+            source venv/bin/activate
+      
+            # Те же переменные окружения
+            export SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
+            export USE_SQLITE="False"
+            export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+            export POSTGRES_HOST="localhost"
+            export POSTGRES_PORT="5432"
+      
+            python manage.py collectstatic --noinput
+          EOF
 
-        - name: Restart application
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              sudo systemctl restart myapp.service
-            EOF
+      - name: Restart application
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            sudo systemctl restart myapp.service
+          EOF
