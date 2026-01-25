@@ -144,6 +144,9 @@ jobs:
               exit 1
             fi
 
+        - name: Check current directory
+          run: pwd
+
         - name: Copy files with rsync (FIXED)
           run: |
             echo "=== COPYING FILES WITH RSYNC ==="
