@@ -21,28 +21,10 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: List directory structure
-        run: |
-          echo "=== DIRECTORY STRUCTURE ==="
-          ls -R
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
-
-      - name: Debug - Show files
-        run: |
-          echo "=== DEBUG: Files after checkout ==="
-          pwd
-          ls -la
-          echo ""
-          echo "Looking for key files:"
-          [ -f pyproject.toml ] && echo "✅ pyproject.toml FOUND" || echo "❌ pyproject.toml NOT FOUND"
-          [ -f manage.py ] && echo "✅ manage.py FOUND" || echo "❌ manage.py NOT FOUND"
-          echo ""
-          echo "All files:"
-          find . -type f | head -20
 
       - name: Install Poetry
         run: |
