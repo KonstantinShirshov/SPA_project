@@ -93,6 +93,9 @@ jobs:
       needs: test
 
       steps:
+        - name: Check out code
+          uses: actions/checkout@v3
+
         - name: Set up SSH
           uses: webfactory/ssh-agent@v0.9.1
           with:
@@ -120,29 +123,6 @@ jobs:
         - name: Check files in directory
           run: |
             ls -la /home/runner/work/SPA_project/
-
-#        - name: Locate project files
-#          run: |
-#            echo "=== FINDING PROJECT FILES ==="
-#
-#            # Ищем во всем workspace
-#            PROJECT_FILES=$(find /home/runner/work -name "pyproject.toml" -type f 2>/dev/null | head -1)
-#
-#            if [ -n "$PROJECT_FILES" ]; then
-#              echo "Found pyproject.toml at: $PROJECT_FILES"
-#              PROJECT_DIR=$(dirname "$PROJECT_FILES")
-#              echo "Project directory: $PROJECT_DIR"
-#
-#              # Переходим в найденную директорию
-#              cd "$PROJECT_DIR"
-#              echo "Now in: $(pwd)"
-#              ls -la
-#            else
-#              echo "❌ ERROR: pyproject.toml not found anywhere!"
-#              echo "Searching for any files:"
-#              find /home/runner/work -type f | head -20
-#              exit 1
-#            fi
 
         - name: Check current directory
           run: pwd
