@@ -78,6 +78,21 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v3
 
+        - name: Set up Python for requirements generation
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.13'
+
+        - name: Install Poetry
+          run: |
+            pip install poetry
+
+        - name: Generate requirements.txt
+          run: |
+            poetry export --without-hashes --format=requirements.txt --output requirements.txt
+            echo "Generated requirements.txt:"
+            head -10 requirements.txt
+
         - name: Set up SSH
           uses: webfactory/ssh-agent@v0.9.1
           with:
@@ -102,18 +117,6 @@ jobs:
             echo "Total files to copy:"
             find . -type f | wc -l
 
-        - name: Check files in directory
-          run: |
-            ls -la /home/runner/work/SPA_project/
-
-        - name: Check current directory
-          run: pwd
-
-        - name: List directory structure
-          run: |
-            echo "=== DIRECTORY STRUCTURE ==="
-            ls -R
-
         - name: Copy files with rsync (FIXED)
           run: |
             echo "=== COPYING FILES WITH RSYNC ==="
@@ -133,53 +136,16 @@ jobs:
               --exclude '*.sqlite3' \
               ./* "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
         
-
-        - name: Install dependencies on server
+        - name: Install Python and system dependencies on server
           run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              set -e
-              cd ${{ secrets.DEPLOY_DIR }}
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && sudo apt-get update -q"
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q python3.13 python3.13-venv python3.13-dev libpq-dev postgresql-client build-essential"
 
-              # Устанавливаем системные зависимости
-              echo "Installing system dependencies..."
-              sudo apt-get update -q
-              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q \
-                python3.13 \
-                python3.13-venv \
-                python3.13-dev \
-                libpq-dev \
-                postgresql-client-16 \
-                build-essential \
-                libssl-dev \
-                libffi-dev
-
-              # Создаем виртуальное окружение
-              python3.13 -m venv venv
-              source venv/bin/activate
-
-              # Обновляем pip
-              pip install --upgrade pip
-
-              # Если есть requirements.txt - используем его
-              if [ -f requirements.txt ]; then
-                echo "Installing from requirements.txt..."
-                pip install -r requirements.txt
-              # Иначе создаем requirements.txt из pyproject.toml
-              elif [ -f pyproject.toml ]; then
-                echo "Generating requirements.txt from pyproject.toml..."
-                # Устанавливаем poetry только для генерации requirements.txt
-                pip install poetry
-                # Генерируем requirements.txt
-                poetry export --without-hashes --format=requirements.txt --output requirements.txt
-                # Устанавливаем зависимости
-                pip install -r requirements.txt
-              else
-                echo "ERROR: No pyproject.toml or requirements.txt found!"
-                exit 1
-              fi
-
-              echo "✅ Dependencies installed successfully"
-            EOF
+        - name: Install Python dependencies on server
+          run: |
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && python3.13 -m venv venv"
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
 
         - name: Apply migrations on server
           run: |

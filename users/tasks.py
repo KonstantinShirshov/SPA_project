@@ -4,12 +4,12 @@ from celery import shared_task
 
 from users.models import User
 
+
 @shared_task
 def blocked_users():
-    """ Блокировка неактивных пользователей. """
+    """Блокировка неактивных пользователей."""
     today = timezone.now().today()
     print(today)
     month_ago = timezone.now() - relativedelta(months=1)
     qs = User.objects.filter(last_login__lt=month_ago, is_active=True)
     qs.update(is_active=False)
-
