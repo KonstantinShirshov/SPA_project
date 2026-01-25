@@ -142,38 +142,43 @@ jobs:
 
               # Устанавливаем системные зависимости
               echo "Installing system dependencies..."
-              sudo apt-get update
-              sudo apt-get install -y \
+              sudo apt-get update -q
+              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q \
                 python3.13 \
                 python3.13-venv \
                 python3.13-dev \
                 libpq-dev \
-                postgresql-client
+                postgresql-client-16 \
+                build-essential \
+                libssl-dev \
+                libffi-dev
 
               # Создаем виртуальное окружение
               python3.13 -m venv venv
               source venv/bin/activate
 
-              # Обновляем pip и setuptools
-              pip install --upgrade pip setuptools wheel
+              # Обновляем pip
+              pip install --upgrade pip
 
-              # Устанавливаем зависимости
+              # Если есть requirements.txt - используем его
               if [ -f requirements.txt ]; then
+                echo "Installing from requirements.txt..."
                 pip install -r requirements.txt
+              # Иначе создаем requirements.txt из pyproject.toml
               elif [ -f pyproject.toml ]; then
-                # Если есть poetry, используем его для генерации requirements.txt
-                if command -v poetry &> /dev/null; then
-                  poetry export --without-hashes -f requirements.txt --output requirements.txt
-                  pip install -r requirements.txt
-                else
-                  # Или устанавливаем poetry и используем его
-                  pip install poetry
-                  poetry export --without-hashes -f requirements.txt --output requirements.txt
-                  pip install -r requirements.txt
-                fi
+                echo "Generating requirements.txt from pyproject.toml..."
+                # Устанавливаем poetry только для генерации requirements.txt
+                pip install poetry
+                # Генерируем requirements.txt
+                poetry export --without-hashes --format=requirements.txt --output requirements.txt
+                # Устанавливаем зависимости
+                pip install -r requirements.txt
+              else
+                echo "ERROR: No pyproject.toml or requirements.txt found!"
+                exit 1
               fi
 
-              echo "Dependencies installed successfully"
+              echo "✅ Dependencies installed successfully"
             EOF
 
         - name: Apply migrations on server
