@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
@@ -76,22 +76,16 @@ jobs:
 
       steps:
         - name: Check out code
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
 
-        - name: Set up Python for requirements generation
-          uses: actions/setup-python@v4
+        - name: Setup Python and Poetry
+          uses: actions/setup-python@v5
           with:
             python-version: '3.13'
-
-        - name: Install Poetry
-          run: |
-            pip install poetry
+        - run: pip install poetry
 
         - name: Generate requirements.txt
-          run: |
-            poetry export --without-hashes --format=requirements.txt --output requirements.txt
-            echo "Generated requirements.txt:"
-            head -10 requirements.txt
+          run: poetry export --without-hashes --format=requirements.txt --output requirements.txt
 
         - name: Set up SSH
           uses: webfactory/ssh-agent@v0.9.1
@@ -104,18 +98,6 @@ jobs:
             chmod 700 ~/.ssh
             ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
             chmod 644 ~/.ssh/known_hosts
-
-        - name: Check local files
-          run: |
-            echo "=== LOCAL FILES ==="
-            pwd
-            ls -la
-            echo ""
-            echo "Looking for pyproject.toml:"
-            find . -name "pyproject.toml" -type f
-            echo ""
-            echo "Total files to copy:"
-            find . -type f | wc -l
 
         - name: Copy files with rsync (FIXED)
           run: |
@@ -136,35 +118,35 @@ jobs:
               --exclude '*.sqlite3' \
               ./* "${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/"
         
-        - name: Install Python and system dependencies on server
-          run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && sudo apt-get update -q"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q python3.13 python3.13-venv python3.13-dev libpq-dev postgresql-client build-essential"
-
-        - name: Install Python dependencies on server
-          run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && python3.13 -m venv venv"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
-
-        - name: Apply migrations on server
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              cd ${{ secrets.DEPLOY_DIR }}
-              source venv/bin/activate
-              python manage.py migrate --noinput
-            EOF
-
-        - name: Collect static files on server
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              cd ${{ secrets.DEPLOY_DIR }}
-              source venv/bin/activate
-              python manage.py collectstatic --noinput
-            EOF
-
-        - name: Restart application
-          run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-              sudo systemctl restart myapp.service
-            EOF
+#        - name: Install Python and system dependencies on server
+#          run: |
+#            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && sudo apt-get update -q"
+#            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y -q python3.13 python3.13-venv python3.13-dev libpq-dev postgresql-client build-essential"
+#
+#        - name: Install Python dependencies on server
+#          run: |
+#            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && python3.13 -m venv venv"
+#            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install --upgrade pip"
+#            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && source venv/bin/activate && pip install -r requirements.txt"
+#
+#        - name: Apply migrations on server
+#          run: |
+#            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+#              cd ${{ secrets.DEPLOY_DIR }}
+#              source venv/bin/activate
+#              python manage.py migrate --noinput
+#            EOF
+#
+#        - name: Collect static files on server
+#          run: |
+#            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+#              cd ${{ secrets.DEPLOY_DIR }}
+#              source venv/bin/activate
+#              python manage.py collectstatic --noinput
+#            EOF
+#
+#        - name: Restart application
+#          run: |
+#            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+#              sudo systemctl restart myapp.service
+#            EOF
