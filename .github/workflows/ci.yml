@@ -136,22 +136,33 @@ jobs:
 
         - name: Install Poetry and dependencies on server
           run: |
-              ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-                cd ${{ secrets.DEPLOY_DIR }}
-              
-                # Устанавливаем Poetry, если еще не установлен
-                if ! command -v poetry &> /dev/null; then
-                  curl -sSL https://install.python-poetry.org | python3 -
-                  export PATH="$HOME/.local/bin:$PATH"
-                fi
-              
-                # Обновляем PATH для текущей сессии
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+              cd ${{ secrets.DEPLOY_DIR }}
+
+              # Устанавливаем Python 3.13 если нужно
+              if ! command -v python3.13 &> /dev/null; then
+                echo "Installing Python 3.13..."
+                sudo apt-get update
+                sudo apt-get install -y software-properties-common
+                sudo add-apt-repository -y ppa:deadsnakes/ppa
+                sudo apt-get update
+                sudo apt-get install -y python3.13 python3.13-venv python3.13-dev
+              fi
+
+              # Устанавливаем Poetry
+              if ! command -v poetry &> /dev/null; then
+                curl -sSL https://install.python-poetry.org | python3.13 -
                 export PATH="$HOME/.local/bin:$PATH"
-              
-                # Устанавливаем зависимости
-                poetry config virtualenvs.in-project true
-                poetry install --no-dev --no-interaction --no-root
-              EOF
+              fi
+
+              # Обновляем PATH
+              export PATH="$HOME/.local/bin:$PATH"
+
+              # Устанавливаем зависимости с указанием Python 3.13
+              poetry env use python3.13
+              poetry config virtualenvs.in-project true
+              poetry install --no-dev --no-interaction --no-root
+            EOF
 
         - name: Apply migrations on server
           run: |
