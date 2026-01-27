@@ -140,7 +140,7 @@ jobs:
             export POSTGRES_HOST="localhost"
             export POSTGRES_PORT="5432"
                         
-            # Создаем директорию для статики
+            
             mkdir -p static
                             
             # Выполняем миграции
