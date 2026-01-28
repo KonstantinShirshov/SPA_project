@@ -131,7 +131,7 @@ jobs:
             cd ${{ secrets.DEPLOY_DIR }}
             source venv/bin/activate
       
-            # Установите переменные окружения согласно settings.py
+            # Установите переменные окружения 
             export SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
             export USE_SQLITE="False"  # Явно указываем использовать PostgreSQL
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"  # Имя базы: spa_project
