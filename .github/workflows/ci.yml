@@ -137,7 +137,7 @@ jobs:
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"  # Имя базы: spa_project
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"  # Пользователь: spa_user
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"  # Пароль: spa_password
-            export POSTGRES_HOST="localhost"
+            export POSTGRES_HOST="db"
             export POSTGRES_PORT="5432"
                         
             
@@ -160,7 +160,7 @@ jobs:
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-            export POSTGRES_HOST="localhost"
+            export POSTGRES_HOST="db"
             export POSTGRES_PORT="5432"
       
             python manage.py collectstatic --noinput
