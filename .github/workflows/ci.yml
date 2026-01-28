@@ -169,5 +169,6 @@ jobs:
       - name: Restart application
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            sudo systemctl restart myapp.service
+          cd ${{ secrets.DEPLOY_DIR }} 
+          sudo docker compose up --build -d
           EOF
